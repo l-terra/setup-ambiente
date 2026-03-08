@@ -3,20 +3,33 @@
 echo "🚀 Iniciando a configuração do ambiente..."
 
 # 1. Atualizar o sistema e instalar dependências do repositório
-echo "📦 Instalando pacotes básicos (curl, git, vim, pipx, exa)..."
+echo "📦 Instalando pacotes básicos (curl, git, vim, pipx, exa, jq, sshpass)..."
 sudo apt update
-sudo apt install -y curl wget git vim pipx unzip exa
+sudo apt install -y curl wget git vim pipx unzip exa jq sshpass
 
-# 2. Instalar o Ansible
-echo "⚙️ Instalando o Ansible via pipx..."
+# 2. Instalar python3-pip e Ansible
+echo "⚙️ Instalando python3-pip e Ansible via pipx..."
+sudo apt install -y python3-pip
 pipx install ansible
 pipx ensurepath
+export PATH="$PATH:$HOME/.local/bin"
 
-# 3. Instalar o Starship
+# 3. Configurar git
+echo "🔧 Configurando git..."
+git config --global user.name "l-terra"
+git config --global user.email "lucas.terra8587@gmail.com"
+
+# 4. Instalar o Helm
+echo "⎈ Instalando o Helm..."
+if ! command -v helm &> /dev/null; then
+    curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+fi
+
+# 5. Instalar o Starship
 echo "⭐ Instalando o Starship..."
 curl -sS https://starship.rs/install.sh | sh -s -- -y
 
-# 4. Instalar ferramentas do Kubernetes (kubectl e kubecolor)
+# 6. Instalar ferramentas do Kubernetes (kubectl e kubecolor)
 echo "☸️ Instalando o kubectl e kubecolor..."
 if ! command -v kubectl &> /dev/null; then
     curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
@@ -32,18 +45,27 @@ if ! command -v kubecolor &> /dev/null; then
     rm "kubecolor_${KUBECOLOR_VERSION#v}_linux_amd64.tar.gz"
 fi
 
-# 5. Instalar o NVM
+# 7. Instalar o NVM
 echo "🟢 Instalando o NVM..."
 if [ ! -d "$HOME/.nvm" ]; then
     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
 fi
 
-# 6. Preparar diretórios essenciais
+# 8. Preparar diretórios essenciais
 echo "📁 Criando pastas do SSH e do Kubernetes..."
 mkdir -p ~/.ssh ~/.kube/configs
 chmod 700 ~/.ssh ~/.kube
 
-# 7. Injetar as configurações customizadas no Bash
+# 10. Instalar o Claude Code
+echo "🤖 Instalando o Claude Code..."
+if ! command -v node &> /dev/null; then
+    export NVM_DIR="$HOME/.nvm"
+    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+    nvm install --lts
+fi
+npm install -g @anthropic-ai/claude-code
+
+# 11. Injetar as configurações customizadas no Bash
 echo "📝 Configurando seus aliases e funções personalizadas..."
 
 cat << 'EOF' > ~/.bash_custom
@@ -115,4 +137,5 @@ echo "✅ Configuração concluída com sucesso!"
 echo "➡️  Próximos passos:"
 echo "1. Coloque sua chave SSH na pasta ~/.ssh/ e rode: chmod 600 ~/.ssh/sua_chave"
 echo "2. Copie seus arquivos do Kubernetes para a pasta ~/.kube/configs/"
-echo "3. Reinicie o terminal ou rode: source ~/.bashrc"
+echo "3. Copie o arquivo .vault_pass para ~/infra/Ansible/.vault_pass"
+echo "4. Reinicie o terminal ou rode: source ~/.bashrc"
